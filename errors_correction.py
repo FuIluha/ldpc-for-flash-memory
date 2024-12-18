@@ -3,22 +3,15 @@ import numpy as np
 def dot_for_codes(a: np.array, b: np.array) -> np.array:
     return np.array(a @ b % 2)
 # мои примеры
-H = np.array([
-    [1, 0, 0, 1, 1, 1, 0],
-    [0, 1, 0, 1, 1, 0, 1],
-    [0, 0, 1, 1, 0, 1, 1]
-])
+H = np.loadtxt('verification_matrix.txt', delimiter=',', dtype=int)
 
-
-r = np.array([
-    [1, 0, 0, 1, 0, 1, 0],  
-    [1, 1, 0, 1, 1, 1, 0],  
-    [1, 0, 1, 0, 1, 1, 0],  
-    [1, 0, 0, 1, 1, 1, 0],  
-])
+r_messages = np.loadtxt('error_messages.txt', delimiter=',', dtype=int)
 
 # Вычисление синдромов S другим способом, потому что иначе размерность не совпадет
-S = np.mod(np.dot(H, r.T), 2).T  
+S = []
+for r in r_messages:
+    S.append(np.mod(np.dot(H, r.T), 2).T )
+
 corrected_r = []
 for current_r, current_S in zip(r, S):
     if not np.any(current_S):  
