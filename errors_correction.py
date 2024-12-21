@@ -34,3 +34,4 @@ for current_r, current_S in zip(r, S):
 corrected_r = np.array(corrected_r)
 print("Исправленные кодовые слова:")
 print(corrected_r)
+
