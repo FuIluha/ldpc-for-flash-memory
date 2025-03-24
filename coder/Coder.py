@@ -11,5 +11,5 @@ class Coder(LinearCodes):
     @staticmethod
     def get_message(H: np.array) -> np.array:
         G = GMatrixGenerator(H).get_matrix()
-        u = np.random.randint(0, 2, G.shape[0], dtype=np.int8)
+        u = np.zeros(G.shape[0], dtype=np.int8)
         return Coder._dot_for_codes(u, G)

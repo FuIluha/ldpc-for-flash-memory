@@ -31,14 +31,14 @@ class PEG(LinearCodes):
                     if cur_c_list_upd.size:
                         c_Q = np.hstack((c_Q, cur_c_list_upd)).astype(np.int16)
                         is_cycle = False
-            s_Q = np.array(())
+            s_Q = np.array((), dtype=np.int16)
             if c_Q.size:
                 for _c in c_Q:
                     s_list_update = np.argwhere(self.H[_c, :] == s_list + 1).ravel()
                     s_list[self.H[_c, :] == 1] = 1
                     if s_list_update.size:
                         s_Q = np.hstack((s_Q, s_list_update)).astype(np.int16)
-            c_Q = np.array(())
+            c_Q = np.array((), dtype=np.int16)
             if is_cycle or np.count_nonzero(new_c_list) == self.m:
                 ind = np.argwhere(cur_c_list == 0).ravel()
                 degree = self.D_c[ind]

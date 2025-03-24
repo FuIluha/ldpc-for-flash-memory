@@ -10,7 +10,7 @@ import numpy as np
 
 class Decoder(LinearCodes):
     @staticmethod
-    def __bitflipping_decoding(r, H, equation_matrix, bit_in_sindrom, max_deep, deep=0):
+    def __bitflipping_decoding(r, H, equation_matrix, bit_in_sindrom, max_deep, deep=0, with_threshold: bool=False):
         if deep >= max_deep:
             return r
 
@@ -24,19 +24,34 @@ class Decoder(LinearCodes):
             if S[i] == 1:
                 for bit in equation_matrix[i]:
                     strange_bits[bit] = strange_bits.get(bit, 0) + 1
-        strangest_bit = min(strange_bits.items(), key=lambda x: bit_in_sindrom[x[0]] - x[1])[0]
-        r[strangest_bit] = (r[strangest_bit] + 1) % 2
-        return Decoder.__bitflipping_decoding(r, H, equation_matrix, bit_in_sindrom, max_deep, deep=deep + 1)
+        if with_threshold:
+            l = np.sum(H[:, 0])
+            t = l / 2 + l % 2
+            for (bit, count) in strange_bits.items():
+                if count >= t:
+                    r[bit] = r[bit] ^ 1
+        else:
+            strangest_bit = min(strange_bits.items(), key=lambda x: bit_in_sindrom[x[0]] - x[1])[0]
+            r[strangest_bit] = (r[strangest_bit] + 1) % 2
+        return Decoder.__bitflipping_decoding(r, H, equation_matrix, bit_in_sindrom, max_deep, deep=deep + 1, with_threshold=with_threshold)
 
     @staticmethod
     def _decode_single_element(args):
-        i, j, H, equation_matrix, bit_in_sindrom, deep, c, r_ij = args
-        decoded = Decoder.__bitflipping_decoding(r_ij, H, equation_matrix, bit_in_sindrom, max_deep=deep)
+        i, j, H, equation_matrix, bit_in_sindrom, deep, c, r_ij, with_threshold = args
+        decoded = Decoder.__bitflipping_decoding(r_ij, H, equation_matrix, bit_in_sindrom, max_deep=deep, with_threshold=with_threshold)
         error = not np.array_equal(c, decoded)
         return i, j, error, decoded
 
     @staticmethod
-    def bitflipping_decoding_for_many(H: np.array, c: np.array, p: np.array, repeat: int, deep: int) -> np.array:
+    def bitflipping_decoding_for_many(
+        H: np.ndarray, 
+        c: np.ndarray, 
+        p: np.ndarray, 
+        repeat: int, 
+        deep: int, 
+        ber: bool = False, 
+        with_threshold: bool = False
+    ) -> np.ndarray:
         n = repeat
         r = ChanelWithErrors.get_messages(c, p, n=n)
 
@@ -46,7 +61,7 @@ class Decoder(LinearCodes):
         count_errors = np.zeros(r.shape[0])
         
         tasks = [
-            (i, j, H, equation_matrix, bit_in_sindrom, deep, c, r[i, j])
+            (i, j, H, equation_matrix, bit_in_sindrom, deep, c, r[i, j], with_threshold)
             for i in range(r.shape[0])
             for j in range(r.shape[1])
         ]
@@ -56,9 +71,15 @@ class Decoder(LinearCodes):
         with ProcessPoolExecutor() as executor:
             results = executor.map(Decoder._decode_single_element, tasks)
 
-        for i, j, error, decoded in results:
-            if error:
-                count_errors[i] += 1
-            decoded_r[i, j] = decoded
+        if ber:
+            for i, j, error, decoded in results:
+                if error:
+                    count_errors[i] += np.sum(decoded)
+            
+            return count_errors / (n * c.shape[0])
+        else:
+            for i, j, error, decoded in results:
+                if error:
+                    count_errors[i] += 1
 
-        return count_errors / n
+            return count_errors / n
