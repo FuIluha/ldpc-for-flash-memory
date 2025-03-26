@@ -33,6 +33,38 @@ class Decoder(LinearCodes):
 
         return i, j, np.any(r_ij), np.sum(r_ij)
     
+    # @staticmethod
+    # def _decode_single_element(args):
+    #     i, j, H, equation_matrix, deep, r_ij, with_threshold = args
+        
+    #     @cache
+    #     def bf_decoder(deep, r: tuple, with_threshold, current_deep = 0) -> tuple:
+    #         r = np.array(r, dtype=np.int8)
+    #         S = (H @ r.T) % 2
+
+    #         if current_deep >= deep:
+    #             return tuple(r)
+
+    #         if not np.any(S):
+    #             return tuple(r)
+            
+    #         strange_bits = np.zeros(H.shape[1])
+    #         error_S = np.argwhere(S == 1)
+    #         np.add.at(strange_bits, equation_matrix[error_S].ravel(), 1)
+
+    #         if with_threshold:
+    #             l = np.sum(H[:, 0])
+    #             t = l / 2 + l % 2
+    #             r[strange_bits >= t] ^= 1
+    #         else:
+    #             r[np.argmax(strange_bits)] ^= 1
+            
+    #         return bf_decoder(deep, tuple(r), with_threshold, current_deep + 1)
+
+    #     r = bf_decoder(deep, tuple(r_ij), with_threshold)
+
+    #     return i, j, np.any(r), np.sum(r)
+    
     @staticmethod
     @jit(nopython=True)
     def _tasks_generator(H, equation_matrix, deep, r, with_threshold):
