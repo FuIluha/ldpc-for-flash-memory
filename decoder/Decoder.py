@@ -7,6 +7,7 @@ from common.LinearCodes import LinearCodes
 from coder.ChanelWithErrors import ChanelWithErrors
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import shared_memory
+from functools import cache
 from numba import jit, prange
 import numpy as np
 
@@ -14,59 +15,38 @@ class Decoder(LinearCodes):
     @staticmethod
     def _decode_single_element(args):
         i, j, H, equation_matrix, deep, r_ij, with_threshold = args
-        for _ in range(deep):
-            S = (H @ r_ij.T) % 2
+        
+        @cache
+        def bf_decoder(deep, r: tuple, with_threshold, current_deep = 0) -> tuple:
+            r = np.array(r, dtype=np.int8)
+            S = (H @ r.T) % 2
+
+            if current_deep >= deep:
+                return tuple(r)
 
             if not np.any(S):
-                break
+                return tuple(r)
             
             strange_bits = np.zeros(H.shape[1])
-            error_S = np.argwhere(S == 1)
-            np.add.at(strange_bits, equation_matrix[error_S].ravel(), 1)
+            error_S = np.argwhere(S == 1).flatten()
+            
+            indices = np.concatenate([equation_matrix[idx] for idx in error_S]).astype(int)
+            np.add.at(strange_bits, indices, 1)
 
             if with_threshold:
                 l = np.sum(H[:, 0])
                 t = l / 2 + l % 2
-                r_ij[strange_bits >= t] ^= 1
+                r[strange_bits >= t] ^= 1
             else:
-                r_ij[np.argmax(strange_bits)] ^= 1
-
-        return i, j, np.any(r_ij), np.sum(r_ij)
-    
-    # @staticmethod
-    # def _decode_single_element(args):
-    #     i, j, H, equation_matrix, deep, r_ij, with_threshold = args
-        
-    #     @cache
-    #     def bf_decoder(deep, r: tuple, with_threshold, current_deep = 0) -> tuple:
-    #         r = np.array(r, dtype=np.int8)
-    #         S = (H @ r.T) % 2
-
-    #         if current_deep >= deep:
-    #             return tuple(r)
-
-    #         if not np.any(S):
-    #             return tuple(r)
+                r[np.argmax(strange_bits)] ^= 1
             
-    #         strange_bits = np.zeros(H.shape[1])
-    #         error_S = np.argwhere(S == 1)
-    #         np.add.at(strange_bits, equation_matrix[error_S].ravel(), 1)
+            return bf_decoder(deep, tuple(r), with_threshold, current_deep + 1)
 
-    #         if with_threshold:
-    #             l = np.sum(H[:, 0])
-    #             t = l / 2 + l % 2
-    #             r[strange_bits >= t] ^= 1
-    #         else:
-    #             r[np.argmax(strange_bits)] ^= 1
-            
-    #         return bf_decoder(deep, tuple(r), with_threshold, current_deep + 1)
+        r = bf_decoder(deep, tuple(r_ij), with_threshold)
 
-    #     r = bf_decoder(deep, tuple(r_ij), with_threshold)
-
-    #     return i, j, np.any(r), np.sum(r)
+        return i, j, np.any(r), np.sum(r)
     
     @staticmethod
-    @jit(nopython=True)
     def _tasks_generator(H, equation_matrix, deep, r, with_threshold):
         for i in prange(r.shape[0]):
             for j in prange(r.shape[1]):
@@ -102,7 +82,7 @@ class Decoder(LinearCodes):
     def bitflipping_decoding_for_many(H, c, p, repeat, deep, ber=False, with_threshold=False):
         n = repeat
         r = ChanelWithErrors.get_messages(c, p, n=n)
-        equation_matrix = np.array([np.where(H[i] == 1)[0] for i in range(H.shape[0])], dtype=np.int16)
+        equation_matrix = np.array([np.where(H[i] == 1)[0] for i in range(H.shape[0])], dtype=object)
 
         shm_H, shared_H = Decoder._create_shared_array(H)
         shm_eq, shared_eq = Decoder._create_shared_array(equation_matrix)

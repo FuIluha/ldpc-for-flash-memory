@@ -72,12 +72,15 @@ def density_evolution(H: np.ndarray):
 
         plt.scatter(all_pvn, f, label=f'$\\rho(x) = {rho_x[:-1]}$, $l = {l:.0f}$, $p = {p:.3f}$, $t = {t}$')
 
-def density_evolution_p(H: np.ndarray, ps: float, repeat: int = 10) -> np.ndarray:
+def density_evolution_p(H: np.ndarray, ps: float, repeat: int = 10, threshold = None) -> np.ndarray:
     l = np.sum(H[:, 0])
     R = np.unique(np.sum(H, axis=1), return_counts=True)
     degres = R[0] * R[1]
 
-    t = int(l // 2 + l % 2)
+    if threshold is None:
+        t = int(l // 2 + l % 2)
+    else:
+        t = threshold
 
     list_pvn = []
 
@@ -96,9 +99,5 @@ def density_evolution_p(H: np.ndarray, ps: float, repeat: int = 10) -> np.ndarra
             pvn = np.sum(binom_coeffs * p_cn_powers * one_minus_p_cn_powers)
             last_pvn = pvn 
         list_pvn.append(last_pvn)
-    
-    rho_x = ''
-    for i in range(len(degres)):
-        rho_x += f'\\frac{{{degres[i]:.0f}}}{{{np.sum(degres):.0f}}}x^{{{R[0][i] - 1:.0f}}}+'
     
     return np.array(list_pvn)
