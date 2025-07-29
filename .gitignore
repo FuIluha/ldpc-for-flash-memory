@@ -1,0 +1,110 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+*.swp
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Logs and local dumps
+*.log
+*.out
+*.pid
+*.dump
+
+# Editor backups and lock files
+*~
+*.bak
+*.tmp
+*.swp
+*.lock
+*.orig
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# MyPy, Pylint, etc.
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pytype/
+.pylint.d/
+
+# Profiling data
+.prof
+*.lprof
+ipython_log.py
+
+# Docker
+*.pid
+*.seed
+*.pid.lock
+
+# Local configs
+config.yaml
+config.json
+secrets.*
+
+# Ignore large data
+data/*
+!data/.gitkeep
+
+# Ignore generated plots/images
+plots/*
+!plots/.gitkeep
