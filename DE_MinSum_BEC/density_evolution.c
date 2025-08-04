@@ -283,11 +283,14 @@ void density_evolution_grid_irregular(
     long double* results
 ) {
     int total = n_p0 - 1;
+    long double last_p_minus_idx = 0;
 
     for (int i = 0; i < n_p0; ++i) {
         results[i] = -1;
         print_progress_bar(i, total);
-        for (int j = 0; j < n_p_minus; ++j) {
+        
+        int step = -1;
+        for (int j = last_p_minus_idx; j < n_p_minus && j >= 0; j += step) {
             long double p0 = p0_vals[i];
             long double p_minus = p_minus_vals[j];
 
@@ -323,11 +326,14 @@ void density_evolution_grid_irregular(
             free(p_minus_out);
             free(p_plus_out);
 
-            if (threshold <= cur_ber) {
+            if (threshold > cur_ber) {
+                results[i] = j;
+                step = 1;
+            } else if (step > 0) {
                 break;
             }
-            results[i] = j;
         }
+        last_p_minus_idx = results[i];
     }
 }
 
@@ -338,11 +344,14 @@ void density_evolution_grid(
     long double* results
 ) {
     int total = n_p0 - 1;
+    long double last_p_minus_idx = 0;
 
     for (int i = 0; i < n_p0; ++i) {
         results[i] = -1;
         print_progress_bar(i, total);
-        for (int j = 0; j < n_p_minus; ++j) {
+        
+        int step = -1;
+        for (int j = last_p_minus_idx; j < n_p_minus && j >= 0; j += step) {
             long double p0 = p0_vals[i];
             long double p_minus = p_minus_vals[j];
 
@@ -368,10 +377,13 @@ void density_evolution_grid(
             free(p_minus_out);
             free(p_plus_out);
 
-            if (threshold <= cur_ber) {
+            if (threshold > cur_ber) {
+                results[i] = j;
+                step = 1;
+            } else if (step > 0) {
                 break;
             }
-            results[i] = j;
         }
+        last_p_minus_idx = results[i];
     }
 }
