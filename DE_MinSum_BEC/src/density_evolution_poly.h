@@ -29,6 +29,7 @@ void density_evolution_grid_irregular(
     int dc_size,
     int num_iters, 
     long double threshold,
+    int is_progress_visible,
     long double* results
 );
 

@@ -4,8 +4,9 @@ def decoding_limit() -> list[np.ndarray, np.ndarray]:
     def H2(p):
         """Binary entropy function in bits (base 2), with special handling of 0·log(0) = 0."""
         p = np.asarray(p)
-        term1 = np.where(p > 0, -p * np.log2(p[p > 0]), 0.0)
-        term2 = np.where(p < 1, -(1 - p[p > 0]) * np.log2(1 - p[p > 0]), 0.0)
+        term1, term2 = np.zeros(p.shape), np.zeros(p.shape)
+        term1[p > 0] = -p * np.log2(p[p > 0])
+        term2[p < 1] = -(1 - p[p > 0]) * np.log2(1 - p[p > 0])
         return term1 + term2
 
     def invert_entropy(target, tol=1e-12, max_iter=200):

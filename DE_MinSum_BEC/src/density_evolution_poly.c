@@ -160,6 +160,7 @@ void density_evolution_grid_irregular(
     int dc_size,
     int num_iters, 
     long double threshold,
+    int is_progress_visible,
     long double* results
 ) {
     int total = n_p0 - 1;
@@ -167,7 +168,8 @@ void density_evolution_grid_irregular(
 
     for (int i = 0; i < n_p0; ++i) {
         results[i] = -1;
-        print_progress_bar(i, total);
+        if (is_progress_visible)
+            print_progress_bar(i, total);
         
         int step = -1;
         for (int j = last_p_minus_idx; j < n_p_minus && j >= 0; j += step) {
