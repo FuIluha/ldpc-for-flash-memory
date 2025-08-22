@@ -150,8 +150,8 @@ __attribute__((visibility("default")))
 void density_evolution_grid_irregular(
     long double* p0_vals, 
     int n_p0,
-    long double* p_minus_vals,
-    int n_p_minus,
+    long double p_minus_limit,
+    int p_minus_max_iters,
     int* dv,
     int* dc,
     long double* lambda,
@@ -164,29 +164,46 @@ void density_evolution_grid_irregular(
     long double* results
 ) {
     int total = n_p0 - 1;
-    long double last_p_minus_idx = 0;
+    long double* p0_out = (long double*)malloc((num_iters + 1) * sizeof(long double));
+    long double* p_minus_out = (long double*)malloc((num_iters + 1) * sizeof(long double));
+    long double* p_plus_out = (long double*)malloc((num_iters + 1) * sizeof(long double));
+    if (!p0_out || !p_minus_out || !p_plus_out) {
+        if (p0_out) free(p0_out);
+        if (p_minus_out) free(p_minus_out);
+        if (p_plus_out) free(p_plus_out);
+        return;
+    }
 
     for (int i = 0; i < n_p0; ++i) {
         results[i] = -1;
+        long double p0 = p0_vals[i];
         if (is_progress_visible)
             print_progress_bar(i, total);
         
-        int step = -1;
-        for (int j = last_p_minus_idx; j < n_p_minus && j >= 0; j += step) {
-            long double p0 = p0_vals[i];
-            long double p_minus = p_minus_vals[j];
+        int num_iter = 0;
+        long double a = 0.0, b = p_minus_limit;
+        
+        density_evolution_bec_irregular(
+            p0,
+            a,
+            dv,
+            dc,
+            lambda,
+            rho,
+            dv_size,
+            dc_size,
+            num_iters,
+            p0_out,
+            p_minus_out,
+            p_plus_out
+        );
 
-            long double* p0_out = (long double*)malloc((num_iters + 1) * sizeof(long double));
-            long double* p_minus_out = (long double*)malloc((num_iters + 1) * sizeof(long double));
-            long double* p_plus_out = (long double*)malloc((num_iters + 1) * sizeof(long double));
-
-            if (!p0_out || !p_minus_out || !p_plus_out) {
-                if (p0_out) free(p0_out);
-                if (p_minus_out) free(p_minus_out);
-                if (p_plus_out) free(p_plus_out);
-                continue;
-            }
-
+        long double cur_ber = p0_out[num_iters] + p_minus_out[num_iters];
+        if (cur_ber >= threshold)
+            break;
+        while (b - a > threshold) {
+            long double p_minus = (a + b) / 2;
+    
             density_evolution_bec_irregular(
                 p0,
                 p_minus,
@@ -201,20 +218,24 @@ void density_evolution_grid_irregular(
                 p_minus_out,
                 p_plus_out
             );
-
-            long double cur_ber = p0_out[num_iters] + p_minus_out[num_iters];
-
-            free(p0_out);
-            free(p_minus_out);
-            free(p_plus_out);
-
-            if (threshold > cur_ber) {
-                results[i] = j;
-                step = 1;
-            } else if (step > 0) {
+    
+            cur_ber = p0_out[num_iters] + p_minus_out[num_iters];
+    
+            if (threshold >= cur_ber)
+                a = p_minus;
+            else
+                b = p_minus;
+            if (p_minus_max_iters < num_iter++) {
+                if (p_minus < p_minus_limit / powl(2, p_minus_max_iters))
+                    a = -1;
                 break;
             }
         }
-        last_p_minus_idx = results[i];
+        if (a == -1)
+            break;
+        results[i] = a;
     }
+    free(p0_out);
+    free(p_minus_out);
+    free(p_plus_out);
 }

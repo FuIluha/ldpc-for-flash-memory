@@ -19,8 +19,8 @@ void density_evolution_bec_irregular(
 void density_evolution_grid_irregular(
     long double* p0_vals, 
     int n_p0,
-    long double* p_minus_vals,
-    int n_p_minus,
+    long double p_minus_limit,
+    int p_minus_max_iters,
     int* dv,
     int* dc,
     long double* lambda,

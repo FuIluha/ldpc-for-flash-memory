@@ -126,7 +126,7 @@ void density_evolution_grid(
     long double* p0_vals, int n_p0,
     long double* p_minus_vals, int n_p_minus,
     int l, int k, int num_iters, long double threshold,
-    long double* results
+    int* results
 ) {
     int total = n_p0 - 1;
     long double last_p_minus_idx = 0;
