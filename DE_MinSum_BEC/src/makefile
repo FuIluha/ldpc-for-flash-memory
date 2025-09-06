@@ -2,7 +2,7 @@
 BUILD_DIR = ../build
 
 # Исходники (относительно текущего каталога)
-SRCS = density_evolution.c progress_bar.c density_evolution_poly.c differential_evolution_poly_find.c
+SRCS = density_evolution.c progress_bar.c density_evolution_poly.c differential_evolution_poly_find.c differential_evolution_prefect_border_find.c
 
 # Генерация объектников в build/
 OBJS = $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRCS))

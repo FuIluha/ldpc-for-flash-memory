@@ -183,6 +183,7 @@ void density_evolution_grid_irregular(
         int num_iter = 0;
         long double a = 0.0, b = p_minus_limit;
         
+        // TODO: Вынести в отдельную функцию
         density_evolution_bec_irregular(
             p0,
             a,
@@ -226,13 +227,9 @@ void density_evolution_grid_irregular(
             else
                 b = p_minus;
             if (p_minus_max_iters < num_iter++) {
-                if (p_minus < p_minus_limit / powl(2, p_minus_max_iters))
-                    a = -1;
                 break;
             }
         }
-        if (a == -1)
-            break;
         results[i] = a;
     }
     free(p0_out);
