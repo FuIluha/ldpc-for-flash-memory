@@ -446,6 +446,8 @@ void differential_evolution_poly_find(
     for (int x_idx = 0; x_idx < np; x_idx++) {
         fx[x_idx] = calc_f(decoding_iters, p_minus_split_iters, dv_max, r, p_0_vals, bounds.p_minus, p_size, threshold, lambda_values[x_idx], type_of_metric);
     }
+    Poly trial_vector;
+    trial_vector.items = (PolyItem*)malloc(dv_max * sizeof(PolyItem));
     for (int i = 0; i < max_iters; i++) {
         print_progress_bar(i, max_iters - 1);
         for (int x_idx = 0; x_idx < np; x_idx++) {
@@ -458,8 +460,6 @@ void differential_evolution_poly_find(
             int b_idx = indices[1];
             int c_idx = indices[2];
             int R = rand() % dv_max;
-            Poly trial_vector;
-            trial_vector.items = (PolyItem*)malloc(dv_max * sizeof(PolyItem));
             trial_vector.size = dv_max;
             for (int j = 0; j < dv_max; j++) {
                 double r_j = (double)rand() / RAND_MAX;
@@ -492,9 +492,9 @@ void differential_evolution_poly_find(
                 }
                 fx[x_idx] = fy; // Обновляем кэш
             }
-            free(trial_vector.items);
         }
     }
+    free(trial_vector.items);
 
     // Найдём индекс лучшего агента через кэш fx
     int best_idx = 0;
@@ -619,6 +619,8 @@ void differential_evolution_poly_find_for_p0_prob(
     for (int x_idx = 0; x_idx < np; x_idx++) {
         fx[x_idx] = calc_f_for_p0_value(decoding_iters, p_minus_split_iters, dv_max, r, p_0, bounds.p_minus, threshold, lambda_values[x_idx]);
     }
+    Poly trial_vector;
+    trial_vector.items = (PolyItem*)malloc(dv_max * sizeof(PolyItem));
     for (int i = 0; i < max_iters; i++) {
         for (int x_idx = 0; x_idx < np; x_idx++) {
             int indices[np - 1], pos = 0;
@@ -630,8 +632,6 @@ void differential_evolution_poly_find_for_p0_prob(
             int b_idx = indices[1];
             int c_idx = indices[2];
             int R = rand() % dv_max;
-            Poly trial_vector;
-            trial_vector.items = (PolyItem*)malloc(dv_max * sizeof(PolyItem));
             trial_vector.size = dv_max;
             for (int j = 0; j < dv_max; j++) {
                 double r_j = (double)rand() / RAND_MAX;
@@ -666,9 +666,9 @@ void differential_evolution_poly_find_for_p0_prob(
                 }
             }
 
-            free(trial_vector.items);
         }
     }
+    free(trial_vector.items);
 
     // Найдём индекс лучшего агента через кэш fx
     int best_idx = 0;

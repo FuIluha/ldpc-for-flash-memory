@@ -6,6 +6,10 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdatomic.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <omp.h>
 
 static long double h2(long double p) {
     // Расчитывает энтропию Шеннона
@@ -38,6 +42,25 @@ static Bounds calc_bounds(double r) {
     return bounds;
 }
 
+// Глобальный атомарный счётчик
+static atomic_int progress_counter;
+static int total_tasks;
+
+// Флаг завершения
+static atomic_int progress_done;
+
+// Поток, который рисует прогресс
+void* progress_thread_func(void* arg) {
+    while (!atomic_load(&progress_done)) {
+        int done = atomic_load(&progress_counter);
+        print_progress_bar(done, total_tasks);
+        usleep(100000); // обновление каждые 0.1 сек
+    }
+    // Финальный вывод
+    print_progress_bar(total_tasks, total_tasks);
+    return NULL;
+}
+
 __attribute__((visibility("default")))
 void differential_evolution_perfect_border_find(
     int dv_max,
@@ -60,17 +83,26 @@ void differential_evolution_perfect_border_find(
         p_0_vals[i] = i * delta_p_0;
     }
 
+    atomic_store(&progress_counter, 0);
+    atomic_store(&progress_done, 0);
+    total_tasks = p_size;
+
+    // Запускаем поток прогресса
+    pthread_t progress_thread;
+    pthread_create(&progress_thread, NULL, progress_thread_func, NULL);
+
+    // Запускаем вычисления параллельно
+    #pragma omp parallel for num_threads(4) schedule(dynamic)
     for (int i = 0; i < p_size; i++) {
-        print_progress_bar(i, p_size - 1);
         long double* lambda = (long double*)malloc((dv_max) * sizeof(long double));
         long double* rho = (long double*)malloc((2) * sizeof(long double));
         int* dc = (int*)malloc((2) * sizeof(int));
         int dc_size;
 
         differential_evolution_poly_find_for_p0_prob(
-            dv_max, r, threshold, np, 
-            cr, f, max_iters, lambda, rho, 
-            dc, &dc_size, p_0_vals[i], decoding_iters, 
+            dv_max, r, threshold, np,
+            cr, f, max_iters, lambda, rho,
+            dc, &dc_size, p_0_vals[i], decoding_iters,
             p_minus_split_iters
         );
 
@@ -80,9 +112,9 @@ void differential_evolution_perfect_border_find(
         }
 
         density_evolution_grid_irregular(
-            (p_0_vals + i), 1, bounds.p_minus, p_minus_split_iters, 
-            dv, dc, lambda, rho, dv_max, 
-            dc_size, decoding_iters, threshold, 0, 
+            (p_0_vals + i), 1, bounds.p_minus, p_minus_split_iters,
+            dv, dc, lambda, rho, dv_max,
+            dc_size, decoding_iters, threshold, 0,
             (p_minus + i)
         );
 
@@ -90,7 +122,14 @@ void differential_evolution_perfect_border_find(
         free(rho);
         free(dc);
         free(dv);
+
+        // отметим задачу
+        atomic_fetch_add(&progress_counter, 1);
     }
+
+    // Всё готово → останавливаем поток прогресса
+    atomic_store(&progress_done, 1);
+    pthread_join(progress_thread, NULL);
 
     free(p_0_vals);
 }

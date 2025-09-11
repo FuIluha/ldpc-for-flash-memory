@@ -1,34 +1,35 @@
 # Папка для сборки
 BUILD_DIR = ../build
 
-# Исходники (относительно текущего каталога)
+# Исходники
 SRCS = density_evolution.c progress_bar.c density_evolution_poly.c differential_evolution_poly_find.c differential_evolution_prefect_border_find.c
 
-# Генерация объектников в build/
+# Объектники
 OBJS = $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRCS))
 
 # Компилятор
 CC = clang
 
-# Флаги компиляции и линковки
-CFLAGS = -fPIC -fvisibility=hidden -Wall -O2
-LDFLAGS = -shared
+# Пути к OpenMP (brew install libomp)
+OMP_PREFIX = /opt/homebrew/opt/libomp
+OMP_INC = $(OMP_PREFIX)/include
+OMP_LIB = $(OMP_PREFIX)/lib
 
-# Цель по умолчанию
+# Флаги
+CFLAGS = -fPIC -fvisibility=hidden -Wall -O2 -Xpreprocessor -fopenmp -I$(OMP_INC)
+LDFLAGS = -shared -L$(OMP_LIB) -lomp
+
+# Цель
 all: $(BUILD_DIR)/libdensity.so
 
-# Сборка .so
 $(BUILD_DIR)/libdensity.so: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^
 
-# Создание объектников в build/
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Убедиться, что папка build существует
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-# Очистка
 clean:
 	rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/libdensity.so
