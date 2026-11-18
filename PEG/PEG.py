@@ -1,5 +1,6 @@
 import sys
 import os
+from pathlib import Path
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import numpy as np
@@ -45,7 +46,7 @@ class PEG(LinearCodes):
                 return ind[np.argmin(degree)]
             cur_c_list = new_c_list.copy()
 
-    def peg(self):
+    def peg(self, output_path=None, delimiter=','):
         for j in range(self.n):
             for k in range(self.D_s_future[j]):
                 if k == 0:
@@ -55,4 +56,7 @@ class PEG(LinearCodes):
                 self.H[c, j] = 1
                 self.D_s[j] += 1
                 self.D_c[c] += 1
-        np.savetxt(f'data/H_matrix/H{self.l}_{self.m}x{self.n}.txt', self.H, fmt='%d', delimiter=',')
+        output_path = Path(output_path or f'data/H_matrix/H{self.l}_{self.m}x{self.n}.txt')
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        np.savetxt(output_path, self.H, fmt='%d', delimiter=delimiter)
+        return self.H.copy()
